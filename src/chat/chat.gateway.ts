@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -7,8 +7,11 @@ import {
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+import { CustomSocket } from 'src/chat/adapters/chat.adapter';
+import { ChatGatewayGuard } from './chat.guard';
 
 @WebSocketGateway({
   cors: {
@@ -18,6 +21,7 @@ import { Server, Socket } from 'socket.io';
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  @WebSocketServer()
   protected server: Server;
 
   private logger: Logger = new Logger('MessageGateway');
@@ -26,19 +30,25 @@ export class ChatGateway
     this.logger.log('Initialized');
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: CustomSocket) {
     this.logger.log(`Client Disconnected: ${client.id}`);
   }
 
-  handleConnection(client: Socket) {
+  handleConnection(client: CustomSocket) {
     this.logger.log(`Client Connected: ${client.id}`);
   }
 
+  @UseGuards(ChatGatewayGuard)
   @SubscribeMessage('message')
   handleMessage(
     @MessageBody() payload: any,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: CustomSocket,
   ) {
+    // console.log(client.user);
     console.log(`${client.id} enviou: ${payload.data}`);
+    this.server.emit('message', {
+      clientId: client.id,
+      message: payload.data,
+    });
   }
 }

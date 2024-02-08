@@ -7,6 +7,9 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { Dialect } from 'sequelize';
 import { ChatGateway } from './chat/chat.gateway';
 import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
+import { JwtModule } from '@nestjs/jwt';
+import { ClsModule } from 'nestjs-cls';
 
 @Module({
   imports: [
@@ -14,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
       envFilePath: '.development.env',
       cache: true,
     }),
+
     SequelizeModule.forRoot({
       dialect: <Dialect>process.env.DATABASE_DIALECT,
       host: process.env.DATABASE_HOST,
@@ -22,14 +26,34 @@ import { AuthModule } from './auth/auth.module';
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
       autoLoadModels: true,
-      synchronize: false,
+      synchronize: true,
       logging: false,
       timezone: '-03:00',
     }),
+
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '30d' },
+    }),
+
+    ClsModule.forRoot({
+      middleware: {
+        // automatically mount the
+        // ClsMiddleware for all routes
+        mount: true,
+        // and use the setup method to
+        // provide default store values.
+        setup: (cls, req) => {
+          cls.set('userToken', req.headers['token']);
+        },
+      },
+    }),
+
     UsersModule,
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ChatGateway],
+  providers: [AppService, AuthService, ChatGateway],
 })
 export class AppModule {}

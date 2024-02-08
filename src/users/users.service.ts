@@ -5,7 +5,7 @@ import { UserCreateRequestDto } from './dto/user-create-request.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User) private userModel: typeof User) {}
+  constructor(@InjectModel(User) private readonly userModel: typeof User) {}
 
   async create(createUserDto: UserCreateRequestDto): Promise<void> {
     const { name, email, password } = createUserDto;
@@ -16,15 +16,27 @@ export class UsersService {
         email,
         password,
       })
-      .catch((error) => console.log(error));
+      .catch((error) => console.error(error));
   }
 
   async findByEmail(email: string): Promise<User> {
-    return await this.userModel.findOne({
+    const user = await this.userModel.findOne({
       where: {
         email,
       },
     });
+
+    return user.toJSON();
+  }
+
+  async findById(id: string): Promise<User> {
+    const user = await this.userModel.findOne({
+      where: {
+        id,
+      },
+    });
+
+    return user.toJSON();
   }
 
   async delete(id: number): Promise<void> {
