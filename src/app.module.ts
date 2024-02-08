@@ -9,7 +9,6 @@ import { ChatGateway } from './chat/chat.gateway';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { JwtModule } from '@nestjs/jwt';
-import { ClsModule } from 'nestjs-cls';
 
 @Module({
   imports: [
@@ -35,19 +34,6 @@ import { ClsModule } from 'nestjs-cls';
       global: true,
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '30d' },
-    }),
-
-    ClsModule.forRoot({
-      middleware: {
-        // automatically mount the
-        // ClsMiddleware for all routes
-        mount: true,
-        // and use the setup method to
-        // provide default store values.
-        setup: (cls, req) => {
-          cls.set('userToken', req.headers['token']);
-        },
-      },
     }),
 
     UsersModule,
